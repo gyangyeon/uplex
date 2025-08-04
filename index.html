@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>사랑이 안다르 챌린지 - 만보기</title>
+  <title>걸으면 사랑이 안다르 챌린지🚶🏻❤️ - 신촌연애학개론</title>
   <style>
     body {
       font-family: sans-serif;
@@ -17,29 +17,50 @@
       font-size: 3rem;
       margin: 1rem 0;
     }
+    .timer {
+      font-size: 1.5rem;
+      margin: 1rem 0;
+      color: #555;
+    }
     button {
       padding: 1rem 2rem;
       font-size: 1rem;
       margin: 0.5rem;
       cursor: pointer;
     }
+    .notice {
+      margin-top: 1rem;
+      color: red;
+      font-size: 0.9rem;
+    }
   </style>
 </head>
 <body>
-  <h1>❤️🚶🏻 걸으면 사랑이 안다르 챌린지 - 신촌연애학개론</h1>
+  <h1>📍 걸으면 사랑이 안다르 챌린지 - 오늘의 걸음 수</h1>
   <div class="count" id="stepCount">0 보</div>
+  <div class="timer" id="timer">경과 시간: 0초</div>
   <button onclick="startPedometer()">걷기 시작</button>
   <button onclick="stopPedometer()">걷기 종료</button>
+  <div class="notice">⚠️ 화면이 꺼지지 않도록 유지해주세요! (절전 모드 OFF 권장)</div>
 
-<script>
+  <script>
     let stepCount = 0;
     let listening = false;
     let lastPeak = 0;
     let motionHandler = null;
+    let wakeLock = null;
+    let startTime = null;
+    let timerInterval = null;
 
     function startPedometer() {
       if (listening) return;
-      if (typeof DeviceMotionEvent.requestPermission === 'function') {
+      stepCount = 0;
+      document.getElementById('stepCount').innerText = '0 보';
+      startTime = Date.now();
+      updateTimer();
+      timerInterval = setInterval(updateTimer, 1000);
+
+      if (typeof DeviceMotionEvent?.requestPermission === 'function') {
         DeviceMotionEvent.requestPermission()
           .then(permissionState => {
             if (permissionState === 'granted') {
@@ -55,22 +76,25 @@
         listening = true;
         keepAwake();
       }
+
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js').catch(console.error);
+      }
     }
 
-   function stopPedometer() {
+    function stopPedometer() {
       if (motionHandler) {
         window.removeEventListener('devicemotion', motionHandler);
         motionHandler = null;
       }
       listening = false;
-      if ('wakeLock' in navigator) {
-        releaseWakeLock();
-      }
+      clearInterval(timerInterval);
+      releaseWakeLock();
     }
 
     function countSteps(event) {
       const acc = event.accelerationIncludingGravity;
-      const magnitude = Math.sqrt(acc.x * acc.x + acc.y * acc.y + acc.z * acc.z);
+      const magnitude = Math.sqrt(acc.x ** 2 + acc.y ** 2 + acc.z ** 2);
 
       const now = Date.now();
       if (magnitude > 12 && now - lastPeak > 500) {
@@ -80,7 +104,14 @@
       }
     }
 
-     let wakeLock = null;
+    function updateTimer() {
+      if (startTime) {
+        const now = Date.now();
+        const elapsedSeconds = Math.floor((now - startTime) / 1000);
+        document.getElementById('timer').innerText = '경과 시간: ' + elapsedSeconds + '초';
+      }
+    }
+
     async function keepAwake() {
       try {
         if ('wakeLock' in navigator) {
