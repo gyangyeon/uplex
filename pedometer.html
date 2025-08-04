@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>개사싶 챌린지 - 만보기</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 2rem;
+    }
+    h1 {
+      font-size: 2rem;
+    }
+    .count {
+      font-size: 3rem;
+      margin: 1rem 0;
+    }
+    button {
+      padding: 1rem 2rem;
+      font-size: 1rem;
+      margin: 0.5rem;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>📍 개사싶 챌린지 - 오늘의 걸음 수</h1>
+  <div class="count" id="stepCount">0 보</div>
+  <button onclick="startPedometer()">걷기 시작</button>
+  <button onclick="stopPedometer()">걷기 종료</button>
+
+  <script>
+    let stepCount = 0;
+    let listening = false;
+    let lastPeak = 0;
+
+    function startPedometer() {
+      if (listening) return;
+      if (typeof DeviceMotionEvent.requestPermission === 'function') {
+        DeviceMotionEvent.requestPermission()
+          .then(permissionState => {
+            if (permissionState === 'granted') {
+              window.addEventListener('devicemotion', countSteps);
+              listening = true;
+            }
+          });
+      } else {
+        window.addEventListener('devicemotion', countSteps);
+        listening = true;
+      }
+    }
+
+    function stopPedometer() {
+      window.removeEventListener('devicemotion', countSteps);
+      listening = false;
+    }
+
+    function countSteps(event) {
+      const acc = event.accelerationIncludingGravity;
+      const magnitude = Math.sqrt(acc.x * acc.x + acc.y * acc.y + acc.z * acc.z);
+
+      const now = Date.now();
+      if (magnitude > 12 && now - lastPeak > 500) {
+        stepCount++;
+        document.getElementById('stepCount').innerText = stepCount + ' 보';
+        lastPeak = now;
+      }
+    }
+  </script>
+</body>
+</html>
