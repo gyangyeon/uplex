@@ -31,10 +31,11 @@
   <button onclick="startPedometer()">걷기 시작</button>
   <button onclick="stopPedometer()">걷기 종료</button>
 
-  <script>
+<script>
     let stepCount = 0;
     let listening = false;
     let lastPeak = 0;
+    let motionHandler = null;
 
     function startPedometer() {
       if (listening) return;
@@ -42,19 +43,29 @@
         DeviceMotionEvent.requestPermission()
           .then(permissionState => {
             if (permissionState === 'granted') {
-              window.addEventListener('devicemotion', countSteps);
+              motionHandler = countSteps;
+              window.addEventListener('devicemotion', motionHandler);
               listening = true;
+              keepAwake();
             }
           });
       } else {
-        window.addEventListener('devicemotion', countSteps);
+        motionHandler = countSteps;
+        window.addEventListener('devicemotion', motionHandler);
         listening = true;
+        keepAwake();
       }
     }
 
-    function stopPedometer() {
-      window.removeEventListener('devicemotion', countSteps);
+   function stopPedometer() {
+      if (motionHandler) {
+        window.removeEventListener('devicemotion', motionHandler);
+        motionHandler = null;
+      }
       listening = false;
+      if ('wakeLock' in navigator) {
+        releaseWakeLock();
+      }
     }
 
     function countSteps(event) {
@@ -68,6 +79,32 @@
         lastPeak = now;
       }
     }
+
+     let wakeLock = null;
+    async function keepAwake() {
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLock = await navigator.wakeLock.request('screen');
+        }
+      } catch (err) {
+        console.error('WakeLock error:', err);
+      }
+    }
+
+    async function releaseWakeLock() {
+      if (wakeLock !== null) {
+        await wakeLock.release();
+        wakeLock = null;
+      }
+    }
+
+    document.addEventListener('visibilitychange', async () => {
+      if (listening && document.visibilityState === 'visible') {
+        await keepAwake();
+      } else if (document.visibilityState === 'hidden') {
+        await releaseWakeLock();
+      }
+    });
   </script>
 </body>
 </html>
