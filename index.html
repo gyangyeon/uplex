@@ -33,6 +33,16 @@
       color: red;
       font-size: 0.9rem;
     }
+    .stamp-image {
+  display: block;
+  margin: 3rem auto;
+  width: 100%; /* 가로 꽉 채움 */
+  aspect-ratio: 4 / 3; /* 가로:세로 비율 4:3 */
+  object-fit: cover;
+  border: 1px solid #ddd;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
   </style>
 </head>
 <body>
@@ -42,6 +52,8 @@
   <button onclick="startPedometer()">걷기 시작</button>
   <button onclick="stopPedometer()">걷기 종료</button>
   <div class="notice">⚠️ 화면이 꺼지지 않도록 유지해주세요! (절전 모드 OFF 권장)</div>
+  <img src="img/screenshoot.png" alt="스탬프존 안내 이미지" class="stamp-image" />
+
 
   <script>
     let stepCount = 0;
